@@ -7,36 +7,46 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import top.hsup.gettarget.R;
-import top.hsup.gettarget.model.ToDoItem;
+import top.hsup.gettarget.db.model.ToDoJob;
+import top.hsup.gettarget.util.Constants;
 
-public class ToDoAdapter extends ArrayAdapter<ToDoItem> {
-
+public class ToDoJobAdapter extends ArrayAdapter<ToDoJob> {
     private int resourceId;
-    private List<ToDoItem> items;
+    private List<ToDoJob> jobs;
 
-    public ToDoAdapter(Context context, int textViewResourceId, List<ToDoItem> items) {
-        super(context, textViewResourceId, items);
+    public ToDoJobAdapter(Context context, int textViewResourceId, List<ToDoJob> jobs) {
+        super(context, textViewResourceId, jobs);
         this.resourceId = textViewResourceId;
-        this.items=items;
+        this.jobs = jobs;
     }
 
-    public void add(ToDoItem item){
-        if(items==null){
-            items=new ArrayList<>();
+    @Override
+    public void add(@Nullable ToDoJob job) {
+        if(jobs==null){
+            jobs=new ArrayList<>();
         }
-        if(item!=null){
-            items.add(0,item);
-            notifyDataSetChanged();
+        jobs.add(job);
+    }
+
+    @Override
+    public void addAll(@NonNull Collection<? extends ToDoJob> collection) {
+        if(jobs==null){
+            jobs=new ArrayList<>();
         }
+        jobs.addAll(collection);
     }
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        ToDoItem item = getItem(position);
+        ToDoJob item = getItem(position);
         View view;
         ViewHolder viewHolder;
         if (convertView == null) {
@@ -49,8 +59,8 @@ public class ToDoAdapter extends ArrayAdapter<ToDoItem> {
             view = convertView;
             viewHolder = (ViewHolder) view.getTag();
         }
-        viewHolder.time.setText(item.getTime());
-        viewHolder.item.setText(item.getItem());
+        viewHolder.time.setText(item.getTitle());
+        viewHolder.item.setText(item.getCreateDate());
         return view;
     }
 
@@ -59,6 +69,4 @@ public class ToDoAdapter extends ArrayAdapter<ToDoItem> {
         TextView time;
         TextView item;
     }
-
 }
-

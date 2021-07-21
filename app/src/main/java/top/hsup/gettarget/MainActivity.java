@@ -1,58 +1,101 @@
 package top.hsup.gettarget;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.DividerItemDecoration;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.room.Room;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.EditText;
 import android.widget.ListAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
 import com.haibin.calendarview.Calendar;
 import com.haibin.calendarview.CalendarView;
+import com.kongzue.dialogx.DialogX;
+import com.kongzue.dialogx.dialogs.BottomDialog;
+
+import com.kongzue.dialogx.interfaces.DialogLifecycleCallback;
+import com.kongzue.dialogx.interfaces.OnBindView;
+import com.kongzue.dialogx.interfaces.OnDialogButtonClickListener;
+import com.liuzhenlin.simrv.SlidingItemMenuRecyclerView;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
-import top.hsup.gettarget.adapter.ToDoAdapter;
-import top.hsup.gettarget.model.ToDoItem;
+import top.hsup.gettarget.adapter.ToDoJobAdapter;
+import top.hsup.gettarget.db.AppDatabase;
+import top.hsup.gettarget.db.dao.ToDoJobDao;
+import top.hsup.gettarget.db.model.ToDoJob;
 
 public class MainActivity extends AppCompatActivity {
-    private List<ToDoItem> todoItems = new ArrayList<>();
-    private ToDoAdapter toDoAdapter;
-    private int count = 10;
-    private String targetDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.CHINESE));
+    private List<ToDoJob> todoItems = new ArrayList<>();
+    private String targetDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-M-dd", Locale.CHINESE));
+    private AppDatabase db;
+    private ToDoJobDao dao;
+    private Handler handler;
+    private EditText jobInput;
 
+    private String getCurrentDate() {
+        return LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-M-dd", Locale.CHINESE));
+    }
+
+    @SuppressLint("HandlerLeak")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        DialogX.init(this);
+        final SlidingItemMenuRecyclerView simrv = findViewById(R.id.simrv);
+        final RecyclerAdapter jobAdapter=new RecyclerAdapter();
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                toDoAdapter.add(new ToDoItem(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm", Locale.CHINESE)), "todo-" + count));
-                count++;
-                System.out.println(count);
-            }
-        });
-        initToDoItems();
-        toDoAdapter = new ToDoAdapter(MainActivity.this, R.layout.todo_item, todoItems);
-        NestedListView todoListView = findViewById(R.id.items_shower);
-        todoListView.setAdapter(toDoAdapter);
-        setListViewHeightBasedOnChildren(todoListView);
-        todoListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                ToDoItem toDoItem = todoItems.get(i);
-                Toast.makeText(MainActivity.this, toDoItem.getItem(), Toast.LENGTH_SHORT).show();
+                BottomDialog.show("新增", "",
+                        new OnBindView<BottomDialog>(R.layout.add_layout) {
+                            @Override
+                            public void onBind(BottomDialog dialog, View v) {
+                                //v.findViewById...
+                                if (jobInput == null) {
+                                    jobInput = v.findViewById(R.id.new_job);
+                                }
+                            }
+                        }).setOkButton("确认", new OnDialogButtonClickListener<BottomDialog>() {
+                    @Override
+                    public boolean onClick(BottomDialog baseDialog, View v) {
+                        String title = jobInput.getText().toString();
+                        if (!title.equals("")) {
+                            ToDoJob job = new ToDoJob().setTitle(jobInput.getText().toString()).setCreateDate(targetDate).setUpdateTime(getCurrentDate());
+                            new Thread() {
+                                @Override
+                                public void run() {
+                                    dao.insertJob(job);
+                                    todoItems.add(job);
+                                    handler.sendEmptyMessage(0);
+                                    simrv.setItemDraggable(true);
+                                }
+                            }.start();
+                        }
+                        return false;
+                    }
+                });
             }
         });
         CalendarView calendarView = findViewById(R.id.calendar_view);
@@ -65,46 +108,139 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onCalendarSelect(Calendar calendar, boolean isClick) {
                 if (isClick) {
-                    System.out.println(calendar.getYear() + "-" + calendar.getMonth() + "-" + calendar.getDay());
-                    targetDate = calendar.getYear() + "-" + calendar.getMonth() + "-" + calendar.getDay();
-                    toDoAdapter.add(new ToDoItem(targetDate, "todo-" + count));
-                    count++;
-                    System.out.println(count);
+                    if (!(calendar.getYear() + "-" + calendar.getMonth() + "-" + calendar.getDay()).equals(targetDate)) {
+                        targetDate = calendar.getYear() + "-" + calendar.getMonth() + "-" + calendar.getDay();
+                        new Thread() {
+                            @Override
+                            public void run() {
+                                List<ToDoJob> jobs = dao.getJobByCreateDate(targetDate);
+                                todoItems.clear();
+                                todoItems.addAll(jobs);
+                                handler.sendEmptyMessage(0);
+                                simrv.setItemDraggable(true);
+                            }
+                        }.start();
+                    }
                 }
             }
         });
+
+        simrv.setLayoutManager(new LinearLayoutManager(this));
+        simrv.setAdapter(jobAdapter);
+        simrv.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL));
+        handler = new Handler() {
+            @Override
+            public void handleMessage(Message msg) {
+                switch (msg.what){
+                    case 0:
+                        jobAdapter.notifyDataSetChanged();
+                }
+            }
+        };
+
+        new Thread() {
+            @Override
+            public void run() {
+                db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "job_todo").build();
+                dao = db.toDoJobDao();
+                List<ToDoJob> jobs = dao.getJobByCreateDate(targetDate);
+                RecyclerAdapter adapter = ((RecyclerAdapter) simrv.getAdapter());
+                assert adapter != null;
+                final int old = adapter.getItemCount();
+                todoItems.clear();
+                if (jobs.size() > 0) {
+                    todoItems.addAll(jobs);
+                    adapter.notifyDataSetChanged();
+                    simrv.setItemDraggable(true);
+                }
+            }
+        }.start();
+
+
     }
 
-    public void setListViewHeightBasedOnChildren(ListView listView) {
-        // 获取ListView对应的Adapter
-        ListAdapter listAdapter = listView.getAdapter();
-        if (listAdapter == null) {
-            return;
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (null != db) {
+            db.close();
         }
-
-        int totalHeight = 0;
-        for (int i = 0, len = listAdapter.getCount(); i < len; i++) {
-            // listAdapter.getCount()返回数据项的数目
-            View listItem = listAdapter.getView(i, null, listView);
-            // 计算子项View 的宽高
-            listItem.measure(0, 0);
-            // 统计所有子项的总高度
-            totalHeight += listItem.getMeasuredHeight();
-        }
-
-        ViewGroup.LayoutParams params = listView.getLayoutParams();
-        params.height = totalHeight + (listView.getDividerHeight() * (listAdapter.getCount() - 1));
-        // listView.getDividerHeight()获取子项间分隔符占用的高度
-        // params.height最后得到整个ListView完整显示需要的高度
-        listView.setLayoutParams(params);
     }
 
-    private void initToDoItems() {
-        for (int i = 0; i < 1; i++) {
-            ToDoItem toDoItem = new ToDoItem(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM", Locale.CHINESE)), "todo-" + i);
-            System.out.println(toDoItem);
-            todoItems.add(toDoItem);
+    private final class RecyclerAdapter extends RecyclerView.Adapter<RecyclerAdapter.ViewHolder>
+            implements View.OnClickListener {
+
+        RecyclerAdapter() {
         }
 
+        @NonNull
+        @Override
+        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            return new ViewHolder(
+                    LayoutInflater.from(parent.getContext())
+                            .inflate(R.layout.item_simrv, parent, false));
+        }
+
+        @SuppressLint("SetTextI18n")
+        @Override
+        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+            ToDoJob job = todoItems.get(position);
+            holder.text.setText(job.getTitle());
+            holder.text.setTag(position);
+            holder.renameButton.setTag(position);
+            holder.deleteButton.setTag(position);
+            holder.topButton.setTag(position);
+        }
+
+        @Override
+        public int getItemCount() {
+            return todoItems.size();
+        }
+
+        final class ViewHolder extends RecyclerView.ViewHolder {
+            final TextView text;
+            final TextView renameButton;
+            final TextView deleteButton;
+            final TextView topButton;
+
+            ViewHolder(View itemView) {
+                super(itemView);
+                text = itemView.findViewById(R.id.text);
+                renameButton = itemView.findViewById(R.id.button_rename);
+                deleteButton = itemView.findViewById(R.id.button_delete);
+                topButton = itemView.findViewById(R.id.button_top);
+
+                text.setOnClickListener(RecyclerAdapter.this);
+                renameButton.setOnClickListener(RecyclerAdapter.this);
+                deleteButton.setOnClickListener(RecyclerAdapter.this);
+                topButton.setOnClickListener(RecyclerAdapter.this);
+            }
+        }
+
+        @Override
+        public void onClick(View v) {
+            switch (v.getId()) {
+                case R.id.text:
+                    Toast.makeText(MainActivity.this,
+                            "Click itemView " + v.getTag().toString(),
+                            Toast.LENGTH_SHORT).show();
+                    break;
+                case R.id.button_rename:
+                    Toast.makeText(MainActivity.this,
+                            "Rename itemView " + v.getTag().toString(),
+                            Toast.LENGTH_SHORT).show();
+                    break;
+                case R.id.button_delete:
+                    Toast.makeText(MainActivity.this,
+                            "Delete itemView " + v.getTag().toString(),
+                            Toast.LENGTH_SHORT).show();
+                    break;
+                case R.id.button_top:
+                    Toast.makeText(MainActivity.this,
+                            "Top itemView " + v.getTag().toString(),
+                            Toast.LENGTH_SHORT).show();
+                    break;
+            }
+        }
     }
 }

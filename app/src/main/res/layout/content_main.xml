@@ -1,51 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">
+
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
             android:layout_marginLeft="10dp"
+            android:layout_marginTop="10dp"
             android:layout_marginRight="10dp"
             app:cardBackgroundColor="#F9F9F9"
             app:cardCornerRadius="10dp"
             app:cardElevation="10dp"
-            app:contentPadding="16dp"
-            >
-        <com.haibin.calendarview.CalendarView
-            android:id="@+id/calendar_view"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-             />
-        </androidx.cardview.widget.CardView>
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="15dp"
-            app:cardBackgroundColor="#F5F5F5"
-            app:cardCornerRadius="10dp"
-            app:cardElevation="10dp"
-            app:contentPadding="16dp"
-            android:layout_marginLeft="10dp"
-            android:layout_marginRight="10dp"
-            >
-            <top.hsup.gettarget.NestedListView
-                android:id="@+id/items_shower"
+            app:contentPadding="16dp">
+
+            <com.haibin.calendarview.CalendarView
+                android:id="@+id/calendar_view"
                 android:layout_width="match_parent"
-                android:layout_height="fill_parent"
+                android:layout_height="wrap_content"
                 android:orientation="vertical" />
         </androidx.cardview.widget.CardView>
 
+        <com.liuzhenlin.simrv.SlidingItemMenuRecyclerView
+            android:id="@+id/simrv"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scrollbars="vertical"
+            app:itemScrollDuration="600" />
 
+        <top.hsup.gettarget.NestedListView
+            android:id="@+id/items_shower"
+            android:layout_width="match_parent"
+            android:layout_height="fill_parent"
+            android:layout_marginTop="15dp"
+            android:orientation="vertical" />
     </LinearLayout>
 
 </androidx.core.widget.NestedScrollView>
