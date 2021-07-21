@@ -11,14 +11,8 @@ import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.EditText;
-import android.widget.ListAdapter;
-import android.widget.ListView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -74,9 +68,7 @@ public class MainActivity extends AppCompatActivity {
                             @Override
                             public void onBind(BottomDialog dialog, View v) {
                                 //v.findViewById...
-                                if (jobInput == null) {
-                                    jobInput = v.findViewById(R.id.new_job);
-                                }
+                                jobInput = v.findViewById(R.id.new_job);
                             }
                         }).setOkButton("确认", new OnDialogButtonClickListener<BottomDialog>() {
                     @Override
