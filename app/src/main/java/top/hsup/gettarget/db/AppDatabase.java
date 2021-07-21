@@ -8,7 +8,7 @@ import top.hsup.gettarget.db.converter.ToDoJobConverters;
 import top.hsup.gettarget.db.dao.ToDoJobDao;
 import top.hsup.gettarget.db.model.ToDoJob;
 
-@Database(entities = {ToDoJob.class},version = 2)
+@Database(entities = {ToDoJob.class},version = 3)
 @TypeConverters({ToDoJobConverters.class})
 public abstract class AppDatabase extends RoomDatabase {
     public abstract ToDoJobDao toDoJobDao();

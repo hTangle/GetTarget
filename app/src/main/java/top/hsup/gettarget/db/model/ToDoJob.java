@@ -11,7 +11,7 @@ import java.util.Date;
 @Entity(
         indices = {
                 @Index(value = "title"),
-                @Index("create_date"),
+                @Index(value = {"create_date", "status"}),
                 @Index("finish_date")
         }
 )
@@ -22,12 +22,17 @@ public class ToDoJob {
     public String title;
     @ColumnInfo(name = "content")
     public String content;
+    @ColumnInfo(name = "status", defaultValue = "0")
+    public int status = 0;
     @ColumnInfo(name = "create_date")
     public String createDate;
     @ColumnInfo(name = "finish_date")
     public String finishDate;
     @ColumnInfo(name = "update_time")
     public String updateTime;
+
+    @Ignore
+    public int index;
 
     public ToDoJob() {
     }
@@ -92,5 +97,26 @@ public class ToDoJob {
     public ToDoJob setUpdateTime(String updateTime) {
         this.updateTime = updateTime;
         return this;
+    }
+
+    public int getStatus() {
+        return status;
+    }
+
+    public ToDoJob setStatus(int status) {
+        this.status = status;
+        return this;
+    }
+
+    @Override
+    public String toString() {
+        return "ToDoJob{" +
+                "id=" + id +
+                ", title='" + title + '\'' +
+                ", content='" + content + '\'' +
+                ", createDate='" + createDate + '\'' +
+                ", finishDate='" + finishDate + '\'' +
+                ", updateTime='" + updateTime + '\'' +
+                '}';
     }
 }

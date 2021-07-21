@@ -5,4 +5,5 @@ import java.util.Locale;
 
 public class Constants {
     public static final SimpleDateFormat FULL_DATE=new SimpleDateFormat("yyyy-MM-dd", Locale.CHINESE);
+    public static final String DB_NAME="save_db";
 }

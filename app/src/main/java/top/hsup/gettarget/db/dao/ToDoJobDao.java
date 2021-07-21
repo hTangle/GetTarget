@@ -5,6 +5,7 @@ import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.Query;
+import androidx.room.Update;
 
 import java.util.Date;
 import java.util.List;
@@ -19,6 +20,9 @@ public interface ToDoJobDao {
     @Query("select * from todojob where create_date = :create")
     List<ToDoJob> getJobByCreateDate(String create);
 
+    @Query("select * from todojob where create_date = :create and status=0")
+    List<ToDoJob> getUnfinishedJobByCreateDate(String create);
+
     @Query("select * from todojob where finish_date = :finish")
     List<ToDoJob> getJobByFinishDate(String finish);
 
@@ -27,5 +31,11 @@ public interface ToDoJobDao {
 
     @Delete
     void deleteJob(ToDoJob job);
+
+    @Update
+    void updateJob(ToDoJob job);
+
+    @Query("update todojob set status = :status where id = :id")
+    void updateJobStatus(int id, int status);
 
 }
